@@ -1,12 +1,13 @@
 ---
 import "../styles/global.css";
+const siteBase = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`;
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href={`${siteBase}favicon.svg`} />
+    <link rel="icon" href={`${siteBase}favicon.ico`} />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>Creds & Co.</title>
@@ -14,11 +15,11 @@ import "../styles/global.css";
   <body>
     <div class="page-shell">
       <header class="topbar">
-        <a class="brand" href="/">Creds <span>&</span> Co.</a>
+        <a class="brand" href={siteBase}>Creds <span>&</span> Co.</a>
         <nav class="nav" aria-label="Main navigation">
-          <a href="/" class="active">Home</a>
-          <a href="/draw">Draw</a>
-          <a href="/art">Art</a>
+          <a href={siteBase} class="active">Home</a>
+          <a href={`${siteBase}draw/`}>Draw</a>
+          <a href={`${siteBase}art/`}>Art</a>
         </nav>
         <div class="header-status">
           <span class="credit-pill" id="credit-balance">0 creds</span>
@@ -36,8 +37,8 @@ import "../styles/global.css";
               dress your avatar with stylish accessories, and post your best work for the whole club to admire.
             </p>
             <div class="cta-row">
-              <a class="primary-btn" href="/draw">Start drawing</a>
-              <a class="secondary-btn" href="/art">Visit the art wall</a>
+              <a class="primary-btn" href={`${siteBase}draw/`}>Start drawing</a>
+              <a class="secondary-btn" href={`${siteBase}art/`}>Visit the art wall</a>
             </div>
           </div>
 

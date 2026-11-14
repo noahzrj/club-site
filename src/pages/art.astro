@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+const siteBase = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`;
 ---
 
 <html lang="en">
@@ -11,11 +12,11 @@ import "../styles/global.css";
   <body>
     <div class="page-shell">
       <header class="topbar">
-        <a class="brand" href="/">Creds <span>&</span> Co.</a>
+        <a class="brand" href={siteBase}>Creds <span>&</span> Co.</a>
         <nav class="nav" aria-label="Main navigation">
-          <a href="/">Home</a>
-          <a href="/draw">Draw</a>
-          <a href="/art" class="active">Art</a>
+          <a href={siteBase}>Home</a>
+          <a href={`${siteBase}draw/`}>Draw</a>
+          <a href={`${siteBase}art/`} class="active">Art</a>
         </nav>
         <div class="header-status">
           <span class="credit-pill" id="credit-balance">0 creds</span>
