@@ -1,0 +1,416 @@
+---
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Draw | Creds & Co.</title>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/">Creds <span>&</span> Co.</a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="/">Home</a>
+          <a href="/draw" class="active">Draw</a>
+          <a href="/art">Art</a>
+        </nav>
+        <div class="header-status">
+          <span class="credit-pill" id="credit-balance">0 creds</span>
+          <button class="primary-btn" type="button" id="daily-reward-btn">Daily reward</button>
+        </div>
+      </header>
+
+      <main class="container">
+        <div class="page-header">
+          <h1>Sketch room</h1>
+          <button class="secondary-btn" type="button" id="login-toggle">Account</button>
+        </div>
+
+        <section class="canvas-panel">
+          <div class="canvas-card">
+            <div class="canvas-wrap">
+              <canvas id="drawingCanvas" width="1000" height="700"></canvas>
+            </div>
+            <div class="toolbar">
+              <div class="tool-picker" role="group" aria-label="Drawing tools">
+                <button class="tool-btn active" type="button" data-tool="brush" aria-pressed="true">Brush</button>
+                <button class="tool-btn" type="button" data-tool="eraser" aria-pressed="false">Eraser</button>
+                <button class="tool-btn" type="button" data-tool="line" aria-pressed="false">Straight line</button>
+                <button class="tool-btn" type="button" data-tool="circle" aria-pressed="false">Circle</button>
+                <button class="tool-btn" type="button" data-tool="blend" aria-pressed="false">Blend</button>
+              </div>
+              <button class="secondary-btn" type="button" id="clear-canvas">Clear</button>
+              <button class="secondary-btn" type="button" id="undo-stroke">Undo</button>
+              <button class="secondary-btn" type="button" id="redo-stroke">Redo</button>
+              <input id="brush-size" type="range" min="2" max="30" value="6" aria-label="Brush size" />
+              <label class="color-picker-label" for="custom-color">Custom color</label>
+              <input id="custom-color" type="color" value="#1d1b36" aria-label="Choose a custom color" />
+              <div class="palette" aria-label="Color palette">
+                <button class="color-swatch active" type="button" style="background:#1d1b36" data-color="#1d1b36" aria-label="Ink"></button>
+                <button class="color-swatch" type="button" style="background:#ffffff" data-color="#ffffff" aria-label="White"></button>
+                <button class="color-swatch" type="button" style="background:#fb7185" data-color="#fb7185" aria-label="Rose"></button>
+                <button class="color-swatch" type="button" style="background:#f97316" data-color="#f97316" aria-label="Orange"></button>
+                <button class="color-swatch" type="button" style="background:#fbbf24" data-color="#fbbf24" aria-label="Yellow"></button>
+                <button class="color-swatch" type="button" style="background:#a3e635" data-color="#a3e635" aria-label="Lime"></button>
+                <button class="color-swatch" type="button" style="background:#34d399" data-color="#34d399" aria-label="Green"></button>
+                <button class="color-swatch" type="button" style="background:#2dd4bf" data-color="#2dd4bf" aria-label="Teal"></button>
+                <button class="color-swatch" type="button" style="background:#38bdf8" data-color="#38bdf8" aria-label="Sky blue"></button>
+                <button class="color-swatch" type="button" style="background:#3b82f6" data-color="#3b82f6" aria-label="Blue"></button>
+                <button class="color-swatch" type="button" style="background:#6366f1" data-color="#6366f1" aria-label="Indigo"></button>
+                <button class="color-swatch" type="button" style="background:#a78bfa" data-color="#a78bfa" aria-label="Violet"></button>
+                <button class="color-swatch" type="button" style="background:#e879f9" data-color="#e879f9" aria-label="Magenta"></button>
+                <button class="color-swatch" type="button" style="background:#a16207" data-color="#a16207" aria-label="Brown"></button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="sidebar-card">
+            <div>
+              <h2>Share art</h2>
+              <p>Post your latest doodle to the club gallery.</p>
+            </div>
+
+            <form class="share-form" id="share-form">
+              <label>
+                Title
+                <input id="art-title" type="text" maxlength="40" placeholder="Morning sketch" required />
+              </label>
+              <label>
+                Tags
+                <input id="art-tags" type="text" maxlength="60" placeholder="space, stars, cozy" />
+              </label>
+              <div class="post-controls">
+                <button class="primary-btn" type="submit">Post to Art</button>
+                <button class="secondary-btn" type="button" id="save-draft">Save draft</button>
+              </div>
+            </form>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div class="login-overlay" id="login-overlay">
+      <div class="login-card">
+        <h2>Welcome to the club</h2>
+        <p>Log in to draw, earn creds, and share your creations.</p>
+        <form class="login-form" id="login-form">
+          <label>
+            Display name
+            <input id="login-name" type="text" maxlength="22" required />
+          </label>
+          <label>
+            Password
+            <input id="login-password" type="password" maxlength="24" placeholder="club123" required />
+          </label>
+          <button class="primary-btn" type="submit">Enter the club</button>
+        </form>
+      </div>
+    </div>
+
+    <script is:inline>
+      const STORAGE_KEY = 'pixel-atelier-profile';
+      const ART_KEY = 'pixel-atelier-artworks';
+      const DRAFT_KEY = 'pixel-atelier-draft';
+      const defaultProfile = { name: '', password: '', creds: 120, accessories: ['glasses'], claimedAt: '' };
+
+      const profile = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultProfile));
+      const dailyRewardBtn = document.getElementById('daily-reward-btn');
+      const balanceNode = document.getElementById('credit-balance');
+      const loginOverlay = document.getElementById('login-overlay');
+      const loginForm = document.getElementById('login-form');
+      const loginToggle = document.getElementById('login-toggle');
+
+      function saveProfile() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      }
+
+      function updateBalance() {
+        balanceNode.textContent = `${profile.creds || 0} creds`;
+      }
+
+      function ensureLoggedIn() {
+        if (!profile.name || !profile.password) {
+          loginOverlay.classList.add('visible');
+          return false;
+        }
+        loginOverlay.classList.remove('visible');
+        return true;
+      }
+
+      function claimDailyReward() {
+        const today = new Date().toDateString();
+        if (profile.claimedAt === today) {
+          alert('You already claimed today\'s bonus.');
+          return;
+        }
+        profile.creds = Number(profile.creds || 0) + 50;
+        profile.claimedAt = today;
+        saveProfile();
+        updateBalance();
+        alert('Daily reward claimed: +50 creds');
+      }
+
+      function showLogin() {
+        loginOverlay.classList.add('visible');
+      }
+
+      dailyRewardBtn.addEventListener('click', () => {
+        if (!ensureLoggedIn()) return;
+        claimDailyReward();
+      });
+
+      loginToggle.addEventListener('click', showLogin);
+
+      loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const name = document.getElementById('login-name').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+        if (!name || !password) return;
+        profile.name = name;
+        profile.password = password;
+        profile.creds = Number(profile.creds || 0);
+        profile.accessories = Array.isArray(profile.accessories) && profile.accessories.length ? profile.accessories : ['glasses'];
+        saveProfile();
+        loginOverlay.classList.remove('visible');
+        loginForm.reset();
+      });
+
+      updateBalance();
+      ensureLoggedIn();
+
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d');
+      const brushSizeInput = document.getElementById('brush-size');
+      const artForm = document.getElementById('share-form');
+      const clearBtn = document.getElementById('clear-canvas');
+      const undoBtn = document.getElementById('undo-stroke');
+      const redoBtn = document.getElementById('redo-stroke');
+      const saveDraftBtn = document.getElementById('save-draft');
+      const colors = [...document.querySelectorAll('.color-swatch')];
+      const toolButtons = [...document.querySelectorAll('.tool-btn')];
+      const customColorInput = document.getElementById('custom-color');
+      let drawing = false;
+      let currentColor = '#1d1b36';
+      let activeTool = 'brush';
+      let undoHistory = [];
+      let redoHistory = [];
+      let startPoint = null;
+      let strokeSnapshot = null;
+      let canvasRatio = 1;
+
+      function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        const previous = document.createElement('canvas');
+        previous.width = canvas.width;
+        previous.height = canvas.height;
+        previous.getContext('2d').drawImage(canvas, 0, 0);
+        canvas.width = canvas.clientWidth * ratio;
+        canvas.height = canvas.clientHeight * ratio;
+        canvasRatio = ratio;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(ratio, ratio);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.fillStyle = '#fffdf9';
+        ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        if (previous.width > 0) ctx.drawImage(previous, 0, 0, canvas.clientWidth, canvas.clientHeight);
+      }
+
+      function restoreDraft() {
+        const draft = localStorage.getItem(DRAFT_KEY);
+        if (!draft) return;
+        const image = new Image();
+        image.onload = () => {
+          ctx.drawImage(image, 0, 0, canvas.clientWidth, canvas.clientHeight);
+          undoHistory = [];
+          redoHistory = [];
+        };
+        image.src = draft;
+      }
+
+      function setColor(color) {
+        currentColor = color;
+        colors.forEach((swatch) => swatch.classList.toggle('active', swatch.dataset.color === color));
+        customColorInput.value = color;
+      }
+
+      function setTool(tool) {
+        activeTool = tool;
+        toolButtons.forEach((button) => {
+          const selected = button.dataset.tool === tool;
+          button.classList.toggle('active', selected);
+          button.setAttribute('aria-pressed', String(selected));
+        });
+      }
+
+      function getRelativePosition(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (event.clientX - rect.left) * (canvas.clientWidth / rect.width),
+          y: (event.clientY - rect.top) * (canvas.clientHeight / rect.height),
+        };
+      }
+
+      function snapshot() {
+        return canvas.toDataURL('image/png');
+      }
+
+      function restoreSnapshot(dataUrl, onRestore) {
+        const image = new Image();
+        image.onload = () => {
+          ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+          ctx.drawImage(image, 0, 0, canvas.clientWidth, canvas.clientHeight);
+          onRestore?.();
+        };
+        image.src = dataUrl;
+      }
+
+      function drawShape(point) {
+        ctx.beginPath();
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = Number(brushSizeInput.value);
+        if (activeTool === 'line') {
+          ctx.moveTo(startPoint.x, startPoint.y);
+          ctx.lineTo(point.x, point.y);
+        } else {
+          const dx = point.x - startPoint.x;
+          const dy = point.y - startPoint.y;
+          ctx.ellipse(startPoint.x, startPoint.y, Math.abs(dx), Math.abs(dy), 0, 0, Math.PI * 2);
+        }
+        ctx.stroke();
+      }
+
+      function beginPaint(event) {
+        if (!ensureLoggedIn()) return;
+        event.preventDefault();
+        drawing = true;
+        startPoint = getRelativePosition(event);
+        strokeSnapshot = snapshot();
+        undoHistory.push(strokeSnapshot);
+        redoHistory = [];
+        canvas.setPointerCapture(event.pointerId);
+        if (activeTool === 'line' || activeTool === 'circle') {
+          strokeSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineWidth = Number(brushSizeInput.value);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (activeTool === 'eraser') {
+          ctx.strokeStyle = '#fffdf9';
+          ctx.lineWidth *= 2.5;
+          ctx.globalCompositeOperation = 'source-over';
+        } else if (activeTool === 'blend') {
+          ctx.strokeStyle = currentColor;
+          ctx.lineWidth *= 2;
+          ctx.globalAlpha = 0.22;
+          ctx.shadowColor = currentColor;
+          ctx.shadowBlur = Number(brushSizeInput.value) * 1.8;
+        } else {
+          ctx.strokeStyle = currentColor;
+        }
+      }
+
+      function paint(event) {
+        if (!drawing) return;
+        const point = getRelativePosition(event);
+        if (activeTool === 'line' || activeTool === 'circle') {
+          ctx.putImageData(strokeSnapshot, 0, 0);
+          drawShape(point);
+          return;
+        }
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+      }
+
+      function endPaint() {
+        if (!drawing) return;
+        if (activeTool === 'line' || activeTool === 'circle') {
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 0;
+          ctx.globalCompositeOperation = 'source-over';
+        } else if (activeTool === 'blend') {
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 0;
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        drawing = false;
+        startPoint = null;
+        strokeSnapshot = null;
+      }
+
+      function clearCanvas() {
+        undoHistory.push(snapshot());
+        redoHistory = [];
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#fffdf9';
+        ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      }
+
+      function undoLastStroke() {
+        if (!undoHistory.length) return;
+        redoHistory.push(snapshot());
+        restoreSnapshot(undoHistory.pop());
+      }
+
+      function redoLastStroke() {
+        if (!redoHistory.length) return;
+        undoHistory.push(snapshot());
+        restoreSnapshot(redoHistory.pop());
+      }
+
+      function saveDraft() {
+        localStorage.setItem(DRAFT_KEY, canvas.toDataURL());
+        alert('Draft saved.');
+      }
+
+      canvas.addEventListener('pointerdown', beginPaint);
+      canvas.addEventListener('pointermove', paint);
+      canvas.addEventListener('pointerup', endPaint);
+      canvas.addEventListener('pointercancel', endPaint);
+      clearBtn.addEventListener('click', clearCanvas);
+      undoBtn.addEventListener('click', undoLastStroke);
+      redoBtn.addEventListener('click', redoLastStroke);
+      saveDraftBtn.addEventListener('click', saveDraft);
+      colors.forEach((swatch) => swatch.addEventListener('click', () => setColor(swatch.dataset.color)));
+      toolButtons.forEach((button) => button.addEventListener('click', () => setTool(button.dataset.tool)));
+      customColorInput.addEventListener('input', () => setColor(customColorInput.value));
+
+      artForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!ensureLoggedIn()) return;
+        const title = document.getElementById('art-title').value.trim() || 'Untitled sketch';
+        const tags = document.getElementById('art-tags').value.trim();
+        const artworks = JSON.parse(localStorage.getItem(ART_KEY) || '[]');
+        artworks.unshift({
+          id: `${Date.now()}`,
+          title,
+          tags,
+          artist: profile.name,
+          image: canvas.toDataURL(),
+          createdAt: new Date().toISOString(),
+        });
+        localStorage.setItem(ART_KEY, JSON.stringify(artworks));
+        profile.creds = Number(profile.creds || 0) + 10;
+        saveProfile();
+        updateBalance();
+        artForm.reset();
+        alert('Artwork posted to the gallery! +10 creds');
+      });
+
+      restoreDraft();
+      setColor(currentColor);
+      setTool(activeTool);
+      updateBalance();
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+    </script>
+  </body>
+</html>

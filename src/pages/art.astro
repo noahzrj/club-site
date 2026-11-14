@@ -1,0 +1,151 @@
+---
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Art | Creds & Co.</title>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/">Creds <span>&</span> Co.</a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="/">Home</a>
+          <a href="/draw">Draw</a>
+          <a href="/art" class="active">Art</a>
+        </nav>
+        <div class="header-status">
+          <span class="credit-pill" id="credit-balance">0 creds</span>
+          <button class="primary-btn" type="button" id="daily-reward-btn">Daily reward</button>
+        </div>
+      </header>
+
+      <main class="container">
+        <div class="page-header">
+          <h1>Art wall</h1>
+          <button class="secondary-btn" type="button" id="login-toggle">Account</button>
+        </div>
+
+        <section class="panel">
+          <div class="section-heading">
+            <h2>Club gallery</h2>
+            <p>Fresh picks from the community.</p>
+          </div>
+          <div class="gallery-grid" id="gallery-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="login-overlay" id="login-overlay">
+      <div class="login-card">
+        <h2>Welcome to the club</h2>
+        <p>Log in to draw, earn creds, and share your creations.</p>
+        <form class="login-form" id="login-form">
+          <label>
+            Display name
+            <input id="login-name" type="text" maxlength="22" required />
+          </label>
+          <label>
+            Password
+            <input id="login-password" type="password" maxlength="24" placeholder="club123" required />
+          </label>
+          <button class="primary-btn" type="submit">Enter the club</button>
+        </form>
+      </div>
+    </div>
+
+    <script is:inline>
+      const STORAGE_KEY = 'pixel-atelier-profile';
+      const ART_KEY = 'pixel-atelier-artworks';
+      const defaultProfile = { name: '', password: '', creds: 120, accessories: ['glasses'], claimedAt: '' };
+      const profile = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultProfile));
+      const balanceNode = document.getElementById('credit-balance');
+      const galleryGrid = document.getElementById('gallery-grid');
+      const dailyRewardBtn = document.getElementById('daily-reward-btn');
+      const loginOverlay = document.getElementById('login-overlay');
+      const loginForm = document.getElementById('login-form');
+      const loginToggle = document.getElementById('login-toggle');
+
+      function saveProfile() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      }
+
+      function updateBalance() {
+        balanceNode.textContent = `${profile.creds || 0} creds`;
+      }
+
+      function ensureLoggedIn() {
+        if (!profile.name || !profile.password) {
+          loginOverlay.classList.add('visible');
+          return false;
+        }
+        loginOverlay.classList.remove('visible');
+        return true;
+      }
+
+      function claimDailyReward() {
+        const today = new Date().toDateString();
+        if (profile.claimedAt === today) {
+          alert('You already claimed today\'s bonus.');
+          return;
+        }
+        profile.creds = Number(profile.creds || 0) + 50;
+        profile.claimedAt = today;
+        saveProfile();
+        updateBalance();
+        alert('Daily reward claimed: +50 creds');
+      }
+
+      function showLogin() {
+        loginOverlay.classList.add('visible');
+      }
+
+      dailyRewardBtn.addEventListener('click', () => {
+        if (!ensureLoggedIn()) return;
+        claimDailyReward();
+      });
+
+      loginToggle.addEventListener('click', showLogin);
+
+      loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const name = document.getElementById('login-name').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+        if (!name || !password) return;
+        profile.name = name;
+        profile.password = password;
+        profile.creds = Number(profile.creds || 0);
+        profile.accessories = Array.isArray(profile.accessories) && profile.accessories.length ? profile.accessories : ['glasses'];
+        saveProfile();
+        loginOverlay.classList.remove('visible');
+        loginForm.reset();
+      });
+
+      function renderGallery() {
+        const artworks = JSON.parse(localStorage.getItem(ART_KEY) || '[]');
+        if (!artworks.length) {
+          galleryGrid.innerHTML = '<div class="empty-state">No artwork here yet. Head to the sketch room and post your first piece.</div>';
+          return;
+        }
+
+        galleryGrid.innerHTML = artworks.map((art) => `
+          <article class="art-card">
+            <img src="${art.image}" alt="${art.title}" />
+            <div class="art-copy">
+              <strong>${art.title}</strong>
+              <small>@${art.artist}</small>
+              <small>${art.tags ? '#' + art.tags.replace(/\s+/g, ' #') : 'Fresh drop'}</small>
+            </div>
+          </article>
+        `).join('');
+      }
+
+      ensureLoggedIn();
+      updateBalance();
+      renderGallery();
+    </script>
+  </body>
+</html>
