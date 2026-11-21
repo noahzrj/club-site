@@ -5,3 +5,5 @@ you have to log in to the website and you can make a avatar with different acces
  and you can use these creds to buys better accecories, like a crown, or wings, and more
  make the accecories fit the person normally, and you dont need to make it an emoji, made it a picture that represents the real thing, and for the drawing part, add more, colors or like color pad, and and made the undo work one stroke at a time, also add more tools like strait line or perfect circle, and blending, and more
 page 4 is going to be the profile page, where users can view and customize their accounts. Users can change their username, password, profile picture, and background theme. The page will also show their total finished and unfinished drawings, likes on each posted drawing, credits, and achievements. There will be a section where users can view their saved drawings and purchased accessories such as hats, glasses, clothes, and wings. They can also check their daily login streak and see how many credits they can earn from future awards.
+
+popop
